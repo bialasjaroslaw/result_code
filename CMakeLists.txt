@@ -50,23 +50,23 @@ if(RESULT_CODE_ENABLE_TESTS)
     gtest_discover_tests(main)
     # Add all failing tests as separate cases to check fail reasons
     ADD_FAILING_TEST(TARGET FAIL_WRONG_ERROR_TYPE SOURCE will_fail.cpp DEFINE FAIL_WRONG_ERROR_TYPE 
-	MATCH_STR "no matching function for call to ‘Result::Failure")
+	MATCH_STR "no matching function for call to.*Result::Failure")
     ADD_FAILING_TEST(TARGET FAIL_WRONG_SUCCESS_TYPE SOURCE will_fail.cpp DEFINE FAIL_WRONG_SUCCESS_TYPE 
-	MATCH_STR "no matching function for call to ‘Result::Success")
+	MATCH_STR "no matching function for call to.*Result::Success")
     ADD_FAILING_TEST(TARGET FAIL_WRONG_ERROR_TYPE_ENUM SOURCE will_fail.cpp DEFINE FAIL_WRONG_ERROR_TYPE_ENUM 
-	MATCH_STR "conversion from ‘Result::Failure<int>’ to non-scalar type")
+	MATCH_STR "conversion from.*Result::Failure<int>.*to non-scalar type")
     ADD_FAILING_TEST(TARGET FAIL_INT_TO_ENUM_CONVERSION SOURCE will_fail.cpp DEFINE FAIL_INT_TO_ENUM_CONVERSION 
-	MATCH_STR "no matching function for call to ‘Result::Success")
+	MATCH_STR "no matching function for call to.*Result::Success")
     ADD_FAILING_TEST(TARGET FAIL_NARROWING_ASSIGNEMENT SOURCE will_fail.cpp DEFINE FAIL_NARROWING_ASSIGNEMENT 
-	MATCH_STR "no matching function for call to ‘Result::Success")
+	MATCH_STR "no matching function for call to.*Result::Success")
     ADD_FAILING_TEST(TARGET FAIL_NO_CTOR1 SOURCE will_fail.cpp DEFINE FAIL_NO_CTOR1 
-	MATCH_STR "no matching function for call to ‘Result::ResultValue<int, int>::ResultValue")
+	MATCH_STR "no matching function for call to.*Result::ResultValue<int, int>::ResultValue")
     ADD_FAILING_TEST(TARGET FAIL_NO_CTOR2 SOURCE will_fail.cpp DEFINE FAIL_NO_CTOR2 
-	MATCH_STR "no matching function for call to ‘Result::ResultValue<int, int>::ResultValue")
+	MATCH_STR "no matching function for call to.*Result::ResultValue<int, int>::ResultValue")
     ADD_FAILING_TEST(TARGET FAIL_NO_IMPLICIT_BOOL_CONVERSION SOURCE will_fail.cpp DEFINE FAIL_NO_IMPLICIT_BOOL_CONVERSION 
-	MATCH_STR "cannot convert ‘Result::ResultValue<int, Result::SimpleError, Result::BadAccessNoThrow>’ to ‘bool’")
+	MATCH_STR "cannot convert.*Result::ResultValue<int, Result::SimpleError, Result::BadAccessNoThrow>.*to.*bool")
     ADD_FAILING_TEST(TARGET FAIL_NO_IMPLICIT_VALUE_GET SOURCE will_fail.cpp DEFINE FAIL_NO_IMPLICIT_VALUE_GET 
-	MATCH_STR "cannot convert ‘Result::ResultValue<int, Result::SimpleError, Result::BadAccessNoThrow>’ to ‘int’")
+	MATCH_STR "cannot convert.*Result::ResultValue<int, Result::SimpleError, Result::BadAccessNoThrow>.*to.*int")
     ADD_FAILING_TEST(TARGET FAIL_NO_STATIC_CAST_VALUE SOURCE will_fail.cpp DEFINE FAIL_NO_STATIC_CAST_VALUE 
-	MATCH_STR "invalid ‘static_cast’ from type ‘Result::ResultValue<int, Result::SimpleError, Result::BadAccessNoThrow>’ to type ‘int’")
+	MATCH_STR "invalid.*static_cast.*Result::ResultValue<int, Result::SimpleError, Result::BadAccessNoThrow>.*to type.*int")
 endif()
