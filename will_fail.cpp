@@ -41,15 +41,15 @@ int main()
     Result::ResultValue<int, int> val6{};
 #endif
 #if defined(FAIL_NO_IMPLICIT_BOOL_CONVERSION)
-    Result::ResultValue val7 = Result::Ok(1);
+    Result::ResultValue<int> val7 = Result::Ok(1);
     bool b1 = val7;
 #endif
 #if defined(FAIL_NO_IMPLICIT_VALUE_GET)
-    Result::ResultValue val8 = Result::Ok(1);
+    Result::ResultValue<int> val8 = Result::Ok(1);
     int i1 = val8;
 #endif
 #if defined(FAIL_NO_STATIC_CAST_VALUE)
-    Result::ResultValue val9 = Result::Ok(1);
+    Result::ResultValue<int> val9 = Result::Ok(1);
     static_cast<int>(val9);
 #endif
 }

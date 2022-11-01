@@ -2,13 +2,18 @@ cmake_minimum_required(VERSION 3.14)
 
 project(result_code VERSION 0.1 LANGUAGES CXX)
 
-set(CMAKE_INCLUDE_CURRENT_DIR ON)
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
 add_library(result_code INTERFACE result.h)
 option(RESULT_CODE_USE_EXCEPTIONS "Use exceptions for bad access errors" ON)
 option(RESULT_CODE_ENABLE_TESTS "Build tests using gtest" OFF)
+option(RESULT_CODE_USE_CXX_17 "Use C++17 to build" OFF)
+
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+if(RESULT_CODE_USE_CXX_17)
+    set(CMAKE_CXX_STANDARD 17)
+else()
+    set(CMAKE_CXX_STANDARD 14)
+endif()
 
 if(RESULT_CODE_USE_EXCEPTIONS)
     target_compile_definitions(result_code INTERFACE USE_EXCEPTIONS)
@@ -64,9 +69,9 @@ if(RESULT_CODE_ENABLE_TESTS)
     ADD_FAILING_TEST(TARGET FAIL_NO_CTOR2 SOURCE will_fail.cpp DEFINE FAIL_NO_CTOR2 
 	MATCH_STR "no matching function for call to.*Result::ResultValue<int, int>::ResultValue")
     ADD_FAILING_TEST(TARGET FAIL_NO_IMPLICIT_BOOL_CONVERSION SOURCE will_fail.cpp DEFINE FAIL_NO_IMPLICIT_BOOL_CONVERSION 
-	MATCH_STR "cannot convert.*Result::ResultValue<int, Result::SimpleError, Result::BadAccessNoThrow>.*to.*bool")
+	MATCH_STR "cannot convert.*Result::ResultValue<int.*>.*to.*bool")
     ADD_FAILING_TEST(TARGET FAIL_NO_IMPLICIT_VALUE_GET SOURCE will_fail.cpp DEFINE FAIL_NO_IMPLICIT_VALUE_GET 
-	MATCH_STR "cannot convert.*Result::ResultValue<int, Result::SimpleError, Result::BadAccessNoThrow>.*to.*int")
+	MATCH_STR "cannot convert.*Result::ResultValue<int.*>.*to.*int")
     ADD_FAILING_TEST(TARGET FAIL_NO_STATIC_CAST_VALUE SOURCE will_fail.cpp DEFINE FAIL_NO_STATIC_CAST_VALUE 
-	MATCH_STR "invalid.*static_cast.*Result::ResultValue<int, Result::SimpleError, Result::BadAccessNoThrow>.*to type.*int")
+	MATCH_STR "invalid.*static_cast.*Result::ResultValue<int.*>.*to type.*int")
 endif()

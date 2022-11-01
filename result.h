@@ -25,7 +25,7 @@ struct is_narrowing_conversion : detail::is_narrowing_conversion_impl<From, To>
 {};
 
 template <typename From, typename To>
-inline constexpr bool is_narrowing_conversion_v = is_narrowing_conversion<From, To>::value;
+constexpr bool is_narrowing_conversion_v = is_narrowing_conversion<From, To>::value;
 
 #if defined(USE_EXCEPTIONS)
 class bad_access : public std::logic_error
@@ -101,14 +101,14 @@ struct Failure
     }
 
     template <typename T,
-              typename std::enable_if_t<std::is_same_v<std::common_type_t<T, err_t>, T>, ErrorType>* = nullptr>
+              typename std::enable_if_t<std::is_same<std::common_type_t<T, err_t>, T>::value, ErrorType>* = nullptr>
     auto cast_to() const -> Failure<T>
     {
         return Failure<T>(_error);
     }
 
     template <typename T, typename U, typename V,
-              typename std::enable_if_t<std::is_same_v<std::common_type_t<T, err_t>, T>, ErrorType>* = nullptr>
+              typename std::enable_if_t<std::is_same<std::common_type_t<T, err_t>, T>::value, ErrorType>* = nullptr>
     operator ResultValue<T, U, V>() const
     {
         return ResultValue<T, U, V>(cast_to<U>());
@@ -159,7 +159,7 @@ public:
     using ok_t = Value;
     using err_t = ErrorType;
     using access_t = BadAccess;
-    static_assert(!std::is_same_v<err_t, void>, "void error type is not allowed");
+    static_assert(!std::is_same<err_t, void>::value, "void error type is not allowed");
     static constexpr size_t _size = size_of<ok_t, err_t>();
     static constexpr size_t _align = align_of<ok_t, err_t>();
 
@@ -192,14 +192,13 @@ public:
         }
         return Err();
     }
-    
-    template<typename T = ok_t, typename std::enable_if_t<std::is_same_v<T, EmptyValue>, T>* = nullptr>
+    template <typename T = ok_t, typename std::enable_if_t<std::is_same<T, EmptyValue>::value, T>* = nullptr>
     void set_success()
     {
         set_value({});
     }
-    
-    template<typename T = err_t, typename std::enable_if_t<std::is_same_v<T, SimpleError>, T>* = nullptr>
+
+    template <typename T = err_t, typename std::enable_if_t<std::is_same<T, SimpleError>::value, T>* = nullptr>
     void set_failure()
     {
         set_error({});
@@ -247,12 +246,13 @@ private:
 
     void handle_error(const char* str) const
     {
+    // can be if constexpr with c++17 or templated with pre c++17
 #if defined(USE_EXCEPTIONS)
-        if constexpr(std::is_same_v<BadAccess, BadAccessThrow>)
+        if (std::is_same<BadAccess, BadAccessThrow>::value)
             throw bad_access(str);
 #endif
         fprintf(stderr, "%s\n", str);
-        if constexpr(std::is_same_v<BadAccess, BadAccessNoThrow>)
+        if (std::is_same<BadAccess, BadAccessNoThrow>::value)
             return;
         std::terminate();
     }
@@ -263,14 +263,14 @@ private:
 };
 
 template <typename Value = EmptyValue>
-auto Ok(Value val = {}) -> Success<Value>
+auto Ok(Value val = {})
 {
-    return Success(val);
+    return Success<Value>(val);
 }
 
 template <typename ErrorType = SimpleError>
-auto Error(ErrorType err = {}) -> Failure<ErrorType>
+auto Error(ErrorType err = {})
 {
-    return Failure(err);
+    return Failure<ErrorType>(err);
 }
 } // namespace Result
