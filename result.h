@@ -173,8 +173,10 @@ public:
     {
         new (&_storage) err_t(error.error());
     }
-
-    ok_t value() const
+    // Add concept for that case, also handle primitive type
+    template <typename Ret = ok_t, typename Access = access_t,
+              std::enable_if_t<std::is_same<Access, BadAccessNoThrow>::value, bool> = true>
+    auto value() -> Ret
     {
         if (!_success)
         {
@@ -183,7 +185,19 @@ public:
         }
         return Ok();
     }
-    err_t error() const
+
+    template <typename Ret = const ok_t&, typename Access = access_t,
+              std::enable_if_t<!std::is_same<Access, BadAccessNoThrow>::value, bool> = true>
+    auto value() -> Ret
+    {
+        if (!_success)
+            handle_error("Attempting to get ResultValue::value()");
+        return Ok();
+    }
+    // Add concept for that case, also handle primitive type
+    template <typename Ret = err_t, typename Access = access_t,
+              std::enable_if_t<std::is_same<Access, BadAccessNoThrow>::value, bool> = true>
+    auto error() -> Ret
     {
         if (_success)
         {
@@ -192,6 +206,16 @@ public:
         }
         return Err();
     }
+
+    template <typename Ret = const err_t&, typename Access = access_t,
+              std::enable_if_t<!std::is_same<Access, BadAccessNoThrow>::value, bool> = true>
+    auto error() -> Ret
+    {
+        if (_success)
+            handle_error("Attempting to get ResultValue::error()");
+        return Err();
+    }
+
     template <typename T = ok_t, typename std::enable_if_t<std::is_same<T, EmptyValue>::value, T>* = nullptr>
     void set_success()
     {
