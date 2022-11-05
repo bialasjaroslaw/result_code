@@ -24,9 +24,6 @@ template <typename From, typename To>
 struct is_narrowing_conversion : detail::is_narrowing_conversion_impl<From, To>
 {};
 
-template <typename From, typename To>
-constexpr bool is_narrowing_conversion_v = is_narrowing_conversion<From, To>::value;
-
 #if defined(USE_EXCEPTIONS)
 class bad_access : public std::logic_error
 {
@@ -66,7 +63,7 @@ struct Success
         return _value;
     }
 
-    template <typename T, typename std::enable_if_t<!is_narrowing_conversion_v<ok_t, T>, Value>* = nullptr>
+    template <typename T, typename std::enable_if<!is_narrowing_conversion<ok_t, T>::value, Value>::type* = nullptr>
     auto cast_to() const -> Success<T>
     {
         return Success<T>(_value);
@@ -100,15 +97,16 @@ struct Failure
         return _error;
     }
 
-    template <typename T,
-              typename std::enable_if_t<std::is_same<std::common_type_t<T, err_t>, T>::value, ErrorType>* = nullptr>
+    template <typename T, typename std::enable_if<std::is_same<typename std::common_type<T, err_t>::type, T>::value,
+                                                  ErrorType>::type* = nullptr>
     auto cast_to() const -> Failure<T>
     {
         return Failure<T>(_error);
     }
 
     template <typename T, typename U, typename V,
-              typename std::enable_if_t<std::is_same<std::common_type_t<T, err_t>, T>::value, ErrorType>* = nullptr>
+              typename std::enable_if<std::is_same<typename std::common_type<T, err_t>::type, T>::value,
+                                      ErrorType>::type* = nullptr>
     operator ResultValue<T, U, V>() const
     {
         return ResultValue<T, U, V>(cast_to<U>());
@@ -175,7 +173,7 @@ public:
     }
     // Add concept for that case, also handle primitive type
     template <typename Ret = ok_t, typename Access = access_t,
-              std::enable_if_t<std::is_same<Access, BadAccessNoThrow>::value, bool> = true>
+              typename std::enable_if<std::is_same<Access, BadAccessNoThrow>::value, bool>::type = true>
     auto value() -> Ret
     {
         if (!_success)
@@ -187,7 +185,7 @@ public:
     }
 
     template <typename Ret = const ok_t&, typename Access = access_t,
-              std::enable_if_t<!std::is_same<Access, BadAccessNoThrow>::value, bool> = true>
+              typename std::enable_if<!std::is_same<Access, BadAccessNoThrow>::value, bool>::type = true>
     auto value() -> Ret
     {
         if (!_success)
@@ -196,7 +194,7 @@ public:
     }
     // Add concept for that case, also handle primitive type
     template <typename Ret = err_t, typename Access = access_t,
-              std::enable_if_t<std::is_same<Access, BadAccessNoThrow>::value, bool> = true>
+              typename std::enable_if<std::is_same<Access, BadAccessNoThrow>::value, bool>::type = true>
     auto error() -> Ret
     {
         if (_success)
@@ -208,7 +206,7 @@ public:
     }
 
     template <typename Ret = const err_t&, typename Access = access_t,
-              std::enable_if_t<!std::is_same<Access, BadAccessNoThrow>::value, bool> = true>
+              typename std::enable_if<!std::is_same<Access, BadAccessNoThrow>::value, bool>::type = true>
     auto error() -> Ret
     {
         if (_success)
@@ -216,13 +214,13 @@ public:
         return Err();
     }
 
-    template <typename T = ok_t, typename std::enable_if_t<std::is_same<T, EmptyValue>::value, T>* = nullptr>
+    template <typename T = ok_t, typename std::enable_if<std::is_same<T, EmptyValue>::value, T>::type* = nullptr>
     void set_success()
     {
         set_value({});
     }
 
-    template <typename T = err_t, typename std::enable_if_t<std::is_same<T, SimpleError>::value, T>* = nullptr>
+    template <typename T = err_t, typename std::enable_if<std::is_same<T, SimpleError>::value, T>::type* = nullptr>
     void set_failure()
     {
         set_error({});
@@ -270,7 +268,7 @@ private:
 
     void handle_error(const char* str) const
     {
-    // can be if constexpr with c++17 or templated with pre c++17
+        // can be if constexpr with c++17 or templated with pre c++17
 #if defined(USE_EXCEPTIONS)
         if (std::is_same<BadAccess, BadAccessThrow>::value)
             throw bad_access(str);
@@ -281,19 +279,19 @@ private:
         std::terminate();
     }
 
-    std::aligned_storage_t<_size, _align> _storage;
+    typename std::aligned_storage<_size, _align>::type _storage;
     bool _moved = false;
     bool _success = false;
 };
 
 template <typename Value = EmptyValue>
-auto Ok(Value val = {})
+auto Ok(Value val = {}) -> Success<Value>
 {
     return Success<Value>(val);
 }
 
 template <typename ErrorType = SimpleError>
-auto Error(ErrorType err = {})
+auto Error(ErrorType err = {}) -> Failure<ErrorType>
 {
     return Failure<ErrorType>(err);
 }
