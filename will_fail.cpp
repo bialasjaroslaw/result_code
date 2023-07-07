@@ -15,6 +15,29 @@ enum ResultEnumCode
     Any
 };
 
+struct NonDefaultConstructible{
+    NonDefaultConstructible(int val) : _val(val){}
+    int get() const{ return _val;}
+    int _val;
+};
+static_assert(!std::is_default_constructible<NonDefaultConstructible>::value);
+
+struct MoveOnly{
+    MoveOnly() = delete;
+    MoveOnly(int val) : _val(val){}
+    MoveOnly(const MoveOnly&) = delete;
+    MoveOnly& operator=(const MoveOnly&) = delete;
+    MoveOnly(MoveOnly&& other) : _val(other._val){ }
+    MoveOnly& operator=(MoveOnly&& other){ _val = other._val; return *this; }
+    int get() const{ return _val;}
+    int _val;
+};
+static_assert(std::is_move_constructible<MoveOnly>::value);
+static_assert(std::is_move_assignable<MoveOnly>::value);
+static_assert(!std::is_default_constructible<MoveOnly>::value);
+static_assert(!std::is_copy_constructible<MoveOnly>::value);
+static_assert(!std::is_copy_assignable<MoveOnly>::value);
+
 int main()
 {
     // Invalid conversions
@@ -51,5 +74,33 @@ int main()
 #if defined(FAIL_NO_STATIC_CAST_VALUE)
     Result::ResultValue<int> val9 = Result::Ok(1);
     static_cast<int>(val9);
+#endif
+#if defined(FAIL_NO_THROW_FOR_NON_TRIVIAL_VALUE)
+    static_assert(!std::is_default_constructible<NonDefaultConstructible>::value);
+    Result::ResultValue<NonDefaultConstructible, Result::SimpleError, Result::BadAccessNoThrow> val = Result::Error();
+    val.value();
+#endif
+#if defined(FAIL_NO_THROW_FOR_NON_TRIVIAL_ERROR)
+    static_assert(!std::is_default_constructible<NonDefaultConstructible>::value);
+    Result::ResultValue<Result::EmptyValue, NonDefaultConstructible, Result::BadAccessNoThrow> val = Result::Error();
+    val.error();
+#endif
+#if defined(FAIL_CAN_NOT_SET_SUCCESS)
+    Result::ResultValue<int, int> val = Result::Error(1);
+    val.set_success();
+#endif
+#if defined(FAIL_CAN_NOT_SET_FAILURE)
+    Result::ResultValue<int, int> val = Result::Error(1);
+    val.set_failure();
+#endif
+#if defined(FAIL_VALUE_OR_MOVABLE)
+    Result::ResultValue<MoveOnly> val = Result::Ok(MoveOnly(1));
+    EXPECT_EQ(val.value_or(MoveOnly(12)).get(), 12);
+#endif
+#if defined(FAIL_DISCARD_OK)
+    Result::Ok();
+#endif
+#if defined(FAIL_DISCARD_FAIL)
+    Result::Error();
 #endif
 }

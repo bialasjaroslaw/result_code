@@ -82,4 +82,19 @@ if(RESULT_CODE_ENABLE_TESTS)
 	MATCH_STR "cannot convert.*Result::ResultValue<int.*>.*to.*int")
     ADD_FAILING_TEST(TARGET FAIL_NO_STATIC_CAST_VALUE SOURCE will_fail.cpp DEFINE FAIL_NO_STATIC_CAST_VALUE 
 	MATCH_STR "invalid.*static_cast.*Result::ResultValue<int.*>.*to type.*int")
+    ADD_FAILING_TEST(TARGET FAIL_NO_THROW_FOR_NON_TRIVIAL_VALUE SOURCE will_fail.cpp DEFINE FAIL_NO_THROW_FOR_NON_TRIVIAL_VALUE 
+	MATCH_STR "error: no matching function for call to.*value\(\)")
+    ADD_FAILING_TEST(TARGET FAIL_NO_THROW_FOR_NON_TRIVIAL_ERROR SOURCE will_fail.cpp DEFINE FAIL_NO_THROW_FOR_NON_TRIVIAL_ERROR 
+	MATCH_STR "error: no matching function for call to.*error\(\)")
+    ADD_FAILING_TEST(TARGET FAIL_CAN_NOT_SET_SUCCESS SOURCE will_fail.cpp DEFINE FAIL_CAN_NOT_SET_SUCCESS 
+	MATCH_STR "error: no matching function for call to.*error\(\)")
+    ADD_FAILING_TEST(TARGET FAIL_CAN_NOT_SET_FAILURE SOURCE will_fail.cpp DEFINE FAIL_CAN_NOT_SET_FAILURE 
+	MATCH_STR "error: no matching function for call to.*error\(\)")
+    ADD_FAILING_TEST(TARGET FAIL_VALUE_OR_MOVABLE SOURCE will_fail.cpp DEFINE FAIL_VALUE_OR_MOVABLE 
+	MATCH_STR "error: no matching function for call to.*value_or\(\)")
+    ADD_FAILING_TEST(TARGET FAIL_DISCARD_OK SOURCE will_fail.cpp DEFINE FAIL_DISCARD_OK 
+	MATCH_STR "error: ignoring return value of.*Result::Success.*Result::Ok")
+    ADD_FAILING_TEST(TARGET FAIL_DISCARD_FAIL SOURCE will_fail.cpp DEFINE FAIL_DISCARD_FAIL 
+	MATCH_STR "error: ignoring return value of.*Result::Failure.*Result::Error")
+
 endif()

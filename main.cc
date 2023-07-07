@@ -17,6 +17,29 @@ enum ResultEnumCode
     Any
 };
 
+struct NonDefaultConstructible{
+    NonDefaultConstructible(int val) : _val(val){}
+    int get() const{ return _val;}
+    int _val;
+};
+static_assert(!std::is_default_constructible<NonDefaultConstructible>::value);
+
+struct MoveOnly{
+    MoveOnly() = delete;
+    MoveOnly(int val) : _val(val){}
+    MoveOnly(const MoveOnly&) = delete;
+    MoveOnly& operator=(const MoveOnly&) = delete;
+    MoveOnly(MoveOnly&& other) : _val(other._val){ }
+    MoveOnly& operator=(MoveOnly&& other){ _val = other._val; return *this; }
+    int get() const{ return _val;}
+    int _val;
+};
+static_assert(std::is_move_constructible<MoveOnly>::value);
+static_assert(std::is_move_assignable<MoveOnly>::value);
+static_assert(!std::is_default_constructible<MoveOnly>::value);
+static_assert(!std::is_copy_constructible<MoveOnly>::value);
+static_assert(!std::is_copy_assignable<MoveOnly>::value);
+
 #if __cplusplus > 201402L
 #define CPP17
 #endif
@@ -74,6 +97,46 @@ TEST(Construct, ValueError)
     auto val = Result::Error(ErrorCode::Any); // error with code
     EXPECT_EQ(val.error(), ErrorCode::Any);
     static_assert(std::is_same<decltype(val), Result::Failure<ErrorCode>>::value);
+}
+
+TEST(Construct, SuccessFromMoveOnlyValue)
+{
+    auto val = Result::Ok(MoveOnly(1)); // error with code
+    static_assert(std::is_same<decltype(val), Result::Success<MoveOnly>>::value);
+    static_assert(std::is_same<decltype(std::declval<Result::Success<MoveOnly>>().value()), const MoveOnly&>::value);
+    EXPECT_EQ(val.value().get(), 1);
+}
+
+TEST(Construct, ErrorFromMoveOnlyValue)
+{
+    auto val = Result::Error(MoveOnly(1)); // error with code
+    static_assert(std::is_same<decltype(val), Result::Failure<MoveOnly>>::value);
+    static_assert(std::is_same<decltype(std::declval<Result::Failure<MoveOnly>>().error()), const MoveOnly&>::value);
+    EXPECT_EQ(val.error().get(), 1);
+}
+
+TEST(Construct, ResultFromSuccessMoveOnlyValue)
+{
+#if defined(CPP17)
+    Result::ResultValue val = Result::Ok(MoveOnly(1)); // error with code
+#else
+    Result::ResultValue<MoveOnly> val = Result::Ok(MoveOnly(1)); // error with code
+#endif
+    static_assert(std::is_same<decltype(val), Result::ResultValue<MoveOnly>>::value);
+    static_assert(std::is_same<decltype(std::declval<Result::Success<MoveOnly>>().value()), const MoveOnly&>::value);
+    EXPECT_EQ(val.value().get(), 1);
+}
+
+TEST(Construct, ResultFromErrorMoveOnlyValue)
+{
+#if defined(CPP17)
+    Result::ResultValue val = Result::Error(MoveOnly(1)); // error with code
+#else
+    Result::ResultValue<Result::EmptyValue, MoveOnly> val = Result::Error(MoveOnly(1)); // error with code
+#endif
+    static_assert(std::is_same<decltype(val), Result::ResultValue<Result::EmptyValue, MoveOnly>>::value);
+    static_assert(std::is_same<decltype(std::declval<Result::Failure<MoveOnly>>().error()), const MoveOnly&>::value);
+    EXPECT_EQ(val.error().get(), 1);
 }
 
 TEST(Construct, UserSuccessAndErrorValueFromError)
@@ -197,6 +260,71 @@ TEST(Access, TerminateSuccessAccess)
     EXPECT_DEATH_IF_SUPPORTED(val.value(), "");
 }
 
+TEST(Access, NoThrowNonDefaultConstructibleValueOr)
+{
+    Result::ResultValue<NonDefaultConstructible, Result::SimpleError, Result::BadAccessNoThrow> val = Result::Error();
+    EXPECT_EQ(val.value_or(NonDefaultConstructible(1)).get(), 1);
+}
+
+TEST(Access, MoveSuccessValue)
+{
+#if defined(CPP17)
+    Result::ResultValue val = Result::Ok(MoveOnly(1));
+#else
+    Result::ResultValue<MoveOnly> val = Result::Ok(MoveOnly(1));
+#endif
+    EXPECT_EQ(val.move_ok().get(), 1);
+}
+
+TEST(Access, ThrowSecondMoveSuccessValue)
+{
+    SKIP_IF_NO_EXCEPTIONS;
+#if defined(CPP17)
+    Result::ResultValue val = Result::Ok(MoveOnly(1));
+#else
+    Result::ResultValue<MoveOnly> val = Result::Ok(MoveOnly(1));
+#endif
+    EXPECT_EQ(val.move_ok().get(), 1);
+    EXPECT_THROW(val.move_ok().get(), bad_access);
+}
+
+TEST(Access, ErrorOrMoveOnlyError)
+{
+    Result::ResultValue<MoveOnly, MoveOnly> val = Result::Ok(MoveOnly(1));
+    EXPECT_EQ(val.error_or(MoveOnly(12)).get(), 12);
+    val = Result::Error(MoveOnly(1));
+    EXPECT_EQ(val.error_or(MoveOnly(22)).get(), 1);
+}
+
+TEST(Access, MoveErrorValue)
+{
+#if defined(CPP17)
+    Result::ResultValue val = Result::Error(MoveOnly(1));
+#else
+    Result::ResultValue<Result::EmptyValue, MoveOnly> val = Result::Error(MoveOnly(1));
+#endif
+    EXPECT_EQ(val.move_error().get(), 1);
+}
+
+TEST(Access, ThrowSecondMoveErrorValue)
+{
+    SKIP_IF_NO_EXCEPTIONS;
+#if defined(CPP17)
+    Result::ResultValue val = Result::Error(MoveOnly(1));
+#else
+    Result::ResultValue<Result::SimpleError, MoveOnly> val = Result::Error(MoveOnly(1));
+#endif
+    EXPECT_EQ(val.move_error().get(), 1);
+    EXPECT_THROW(val.move_error().get(), bad_access);
+}
+
+TEST(Access, ValueOrFromTemporary)
+{
+    Result::ResultValue<std::string, int> val = Result::Error(1);
+    const auto& v = val.value_or(std::string("foo"));
+    EXPECT_EQ(v, "foo");
+}
+
 TEST(Conversion, SuccessValueToFullyQualifiedResult)
 {
     Result::ResultValue<int, Result::SimpleError> val = Result::Ok(1);
@@ -230,7 +358,7 @@ TEST(Conversion, SuccessValueNoNarrowingTypeConversionWithInt)
 TEST(Conversion, SuccessValueNoNarrowingTypeConversionWithFP)
 {
     Result::ResultValue<double, ErrorCode> val = Result::Ok(1.1f);
-    EXPECT_FLOAT_EQ(val.value(), 1.1);
+    EXPECT_DOUBLE_EQ(val.value(), 1.1f);
 }
 TEST(Conversion, SuccessValueNoNarrowingTypeConversionWithUnisgned)
 {
@@ -255,7 +383,7 @@ TEST(Cast, SuccessCastToUnsignedSamePrecision)
 TEST(Cast, SuccessCastToHigherPrecisionFP)
 {
     Result::ResultValue<double, ErrorCode> val = Result::Ok(1.1f);
-    EXPECT_FLOAT_EQ(val.value(), 1.1);
+    EXPECT_DOUBLE_EQ(val.value(), 1.1f);
 }
 
 TEST(Cast, SuccessCastNoNarrowingTypeConversionWithUnisgned)
