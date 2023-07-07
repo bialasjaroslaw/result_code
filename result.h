@@ -209,6 +209,19 @@ public:
         new (&_storage) err_t(error.move());
     }
 
+    void handle_error(const char* str = "") const noexcept(std::is_same<BadAccess, BadAccessNoThrow>::value)
+    {
+        // can be if constexpr with c++17 or templated with pre c++17
+#if defined(USE_EXCEPTIONS)
+        if (std::is_same<BadAccess, BadAccessThrow>::value)
+            throw bad_access(str);
+#endif
+        fprintf(stderr, "%s\n", str);
+        if (std::is_same<BadAccess, BadAccessNoThrow>::value)
+            return;
+        std::terminate();
+    }
+
     // Add concept for that case, also handle primitive type
     template <typename Ret = ok_t, typename Access = access_t,
               typename std::enable_if<std::is_same<Access, BadAccessNoThrow>::value, bool>::type = true,
@@ -265,7 +278,7 @@ public:
 
     // What return type? ok_t or const ok_t&
     template <typename Ret = const err_t&, typename Access = access_t>
-    const Ret& error_or(const Ret& ret) const noexcept(noexcept(Err())) // -> Ret
+    const Ret& error_or(const Ret& ret) const noexcept(/*noexcept(Err())*/true) // -> Ret
     {
         if (_success || _moved)
             return ret;
@@ -282,18 +295,6 @@ public:
         return MoveErr();
     }
 
-    template <typename T = ok_t, typename std::enable_if<std::is_same<T, EmptyValue>::value, T>::type* = nullptr>
-    void set_success() noexcept(noexcept(set_value({})))
-    {
-        set_value({});
-    }
-
-    template <typename T = err_t, typename std::enable_if<std::is_same<T, SimpleError>::value, T>::type* = nullptr>
-    void set_failure() noexcept(noexcept(set_error({})))
-    {
-        set_error({});
-    }
-
     void set_value(const ok_t& value) noexcept(std::is_nothrow_constructible<ok_t>::value)
     {
         _moved = false;
@@ -306,6 +307,18 @@ public:
         _moved = false;
         _success = false;
         new (&_storage) err_t(error);
+    }
+
+    template <typename T = ok_t, typename std::enable_if<std::is_same<T, EmptyValue>::value, T>::type* = nullptr>
+    void set_success() noexcept(noexcept(set_value({})))
+    {
+        set_value({});
+    }
+
+    template <typename T = err_t, typename std::enable_if<std::is_same<T, SimpleError>::value, T>::type* = nullptr>
+    void set_failure() noexcept(noexcept(set_error({})))
+    {
+        set_error({});
     }
 
     explicit operator bool() const noexcept(true)
@@ -343,19 +356,6 @@ private:
             handle_error("Attempting to move in MoveErr");
         _moved = true;
         return std::move(*reinterpret_cast<err_t*>(&_storage));
-    }
-
-    void handle_error(const char* str = "") const noexcept(std::is_same<BadAccess, BadAccessNoThrow>::value)
-    {
-        // can be if constexpr with c++17 or templated with pre c++17
-#if defined(USE_EXCEPTIONS)
-        if (std::is_same<BadAccess, BadAccessThrow>::value)
-            throw bad_access(str);
-#endif
-        fprintf(stderr, "%s\n", str);
-        if (std::is_same<BadAccess, BadAccessNoThrow>::value)
-            return;
-        std::terminate();
     }
 
     typename std::aligned_storage<_size, _align>::type _storage;
