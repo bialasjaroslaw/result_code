@@ -1,8 +1,18 @@
 cmake_minimum_required(VERSION 3.14)
 
-project(result_code VERSION 0.1 LANGUAGES CXX)
+project(result_code VERSION 0.1.0 LANGUAGES CXX)
+
+add_library(project_options INTERFACE)
+add_library(project_warnings INTERFACE)
+
+include(cmake/CompilerWarnings.cmake)
+set_project_warnings(project_warnings)
+include(cmake/Sanitizers.cmake)
+enable_sanitizers(project_options)
+
 
 add_library(result_code INTERFACE result.h)
+target_link_libraries(result_code INTERFACE project_warnings project_options)
 option(RESULT_CODE_USE_EXCEPTIONS "Use exceptions for bad access errors" ON)
 option(RESULT_CODE_ENABLE_TESTS "Build tests using gtest" OFF)
 option(RESULT_CODE_TESTS_USE_CXX_17 "Use C++17 to build tests" OFF)
@@ -24,8 +34,9 @@ if(RESULT_CODE_ENABLE_TESTS)
 	cmake_parse_arguments(FAILING_ARGS "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN} )
 
 	add_executable(${FAILING_ARGS_TARGET} ${FAILING_ARGS_SOURCE})
+	target_link_libraries(${FAILING_ARGS_TARGET} PUBLIC project_warnings project_options)
 	set_target_properties(${FAILING_ARGS_TARGET} PROPERTIES EXCLUDE_FROM_ALL TRUE EXCLUDE_FROM_DEFAULT_BUILD TRUE)
-	target_compile_definitions(${FAILING_ARGS_TARGET} PRIVATE ${FAILING_ARGS_DEFINE})
+	target_compile_definitions(${FAILING_ARGS_TARGET} PRIVATE ${FAILING_ARGS_DEFINE}) 
 	add_test(NAME ${FAILING_ARGS_TARGET}
 	     COMMAND ${CMAKE_COMMAND} --build . --target ${FAILING_ARGS_TARGET} --config $<CONFIGURATION>
 	     WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
