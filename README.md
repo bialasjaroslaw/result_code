@@ -23,4 +23,4 @@ To learn. To create small useful implementation.
 TBD
 
 ## License
-Licensed under BSD license.
+Licensed under BSL license.
