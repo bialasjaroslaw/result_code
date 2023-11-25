@@ -285,12 +285,12 @@ public:
         return Err();
     }
 
-    auto move_ok() noexcept(noexcept(MoveOk())) -> ok_t&&
+    auto move_ok() noexcept(noexcept(this->MoveOk())) -> ok_t&&
     {
         return MoveOk();
     }
 
-    auto move_error() noexcept(noexcept(MoveErr())) -> err_t&&
+    auto move_error() noexcept(noexcept(this->MoveErr())) -> err_t&&
     {
         return MoveErr();
     }

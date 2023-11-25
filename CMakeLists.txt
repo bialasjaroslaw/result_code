@@ -11,7 +11,8 @@ include(cmake/Sanitizers.cmake)
 enable_sanitizers(project_options)
 
 
-add_library(result_code INTERFACE result.h)
+add_library(result_code INTERFACE)
+target_sources(result_code INTERFACE result.h)
 target_link_libraries(result_code INTERFACE project_warnings project_options)
 option(RESULT_CODE_USE_EXCEPTIONS "Use exceptions for bad access errors" ON)
 option(RESULT_CODE_ENABLE_TESTS "Build tests using gtest" OFF)
