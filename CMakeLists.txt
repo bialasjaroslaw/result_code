@@ -74,15 +74,15 @@ if(RESULT_CODE_ENABLE_TESTS)
     ADD_FAILING_TEST(TARGET FAIL_NARROWING_ASSIGNEMENT SOURCE will_fail.cpp DEFINE FAIL_NARROWING_ASSIGNEMENT 
 	MATCH_STR "no matching function for call to.*Result::Success")
     ADD_FAILING_TEST(TARGET FAIL_NO_CTOR1 SOURCE will_fail.cpp DEFINE FAIL_NO_CTOR1 
-	MATCH_STR "no matching function for call to.*Result::ResultValue<int, int>::ResultValue")
+	MATCH_STR "no matching function for call to.*Result::Expected<int, int>::Expected")
     ADD_FAILING_TEST(TARGET FAIL_NO_CTOR2 SOURCE will_fail.cpp DEFINE FAIL_NO_CTOR2 
-	MATCH_STR "no matching function for call to.*Result::ResultValue<int, int>::ResultValue")
+	MATCH_STR "no matching function for call to.*Result::Expected<int, int>::Expected")
     ADD_FAILING_TEST(TARGET FAIL_NO_IMPLICIT_BOOL_CONVERSION SOURCE will_fail.cpp DEFINE FAIL_NO_IMPLICIT_BOOL_CONVERSION 
-	MATCH_STR "cannot convert.*Result::ResultValue<int.*>.*to.*bool")
+	MATCH_STR "cannot convert.*Result::Expected<int.*>.*to.*bool")
     ADD_FAILING_TEST(TARGET FAIL_NO_IMPLICIT_VALUE_GET SOURCE will_fail.cpp DEFINE FAIL_NO_IMPLICIT_VALUE_GET 
-	MATCH_STR "cannot convert.*Result::ResultValue<int.*>.*to.*int")
+	MATCH_STR "cannot convert.*Result::Expected<int.*>.*to.*int")
     ADD_FAILING_TEST(TARGET FAIL_NO_STATIC_CAST_VALUE SOURCE will_fail.cpp DEFINE FAIL_NO_STATIC_CAST_VALUE 
-	MATCH_STR "invalid.*static_cast.*Result::ResultValue<int.*>.*to type.*int")
+	MATCH_STR "invalid.*static_cast.*Result::Expected<int.*>.*to type.*int")
     ADD_FAILING_TEST(TARGET FAIL_NO_THROW_FOR_NON_TRIVIAL_VALUE SOURCE will_fail.cpp DEFINE FAIL_NO_THROW_FOR_NON_TRIVIAL_VALUE 
 	MATCH_STR "error: no matching function for call to.*value\(\)")
     ADD_FAILING_TEST(TARGET FAIL_NO_THROW_FOR_NON_TRIVIAL_ERROR SOURCE will_fail.cpp DEFINE FAIL_NO_THROW_FOR_NON_TRIVIAL_ERROR 
